@@ -37,4 +37,9 @@ class RelatorioRepositoryImpl implements RelatorioRepository {
   Future<void> deleteRelatorio(String obraId, String relatorioId) async {
     await dataSource.deleteRelatorio(obraId, relatorioId);
   }
+
+  @override
+  Future<Relatorio?> getRelatorioById(String obraId, String relatorioId) {
+    return dataSource.getRelatorioById(obraId, relatorioId);
+  }
 }

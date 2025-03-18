@@ -9,15 +9,15 @@ class Relatorio {
   final String status;
 
   static const List<String> allSections = [
-    'Condição climática',
-    'Índice pluviométrico',
-    'Mão de obra',
+    'Condicao Climática',
+    'Índice Pluviométrico',
+    'Mão de Obra',
     'Equipamentos',
     'Atividades',
     'Ocorrências',
     'Comentários',
     'Fotos',
-    'Vídeos',
+    'Videos',
     'Anexos',
   ];
 
@@ -31,4 +31,27 @@ class Relatorio {
     required this.content,
     this.status = 'Preenchendo',
   });
+
+  // Método copyWith para criar uma cópia com algumas propriedades modificadas
+  Relatorio copyWith({
+    String? id,
+    String? obraId,
+    DateTime? data,
+    List<String>? sections,
+    bool? copyLast,
+    DateTime? createdAt,
+    Map<String, List<dynamic>>? content,
+    String? status,
+  }) {
+    return Relatorio(
+      id: id ?? this.id,
+      obraId: obraId ?? this.obraId,
+      data: data ?? this.data,
+      sections: sections ?? List<String>.from(this.sections),
+      copyLast: copyLast ?? this.copyLast,
+      createdAt: createdAt ?? this.createdAt,
+      content: content ?? Map<String, List<dynamic>>.from(this.content),
+      status: status ?? this.status,
+    );
+  }
 }

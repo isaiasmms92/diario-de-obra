@@ -1,5 +1,6 @@
 import 'package:app_diario_obra/core/di/injection_container.dart' as di;
 import 'package:app_diario_obra/features/obra/presentation/controllers/obra_controller.dart';
+import 'package:app_diario_obra/features/relatorio/presentation/controllers/relatorio_editor_controller.dart';
 import 'package:app_diario_obra/router.dart';
 import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:flutter/material.dart';
@@ -36,6 +37,9 @@ void main() async {
         ),
         ChangeNotifierProvider(
           create: (_) => di.sl<AuthController>(),
+        ),
+        ChangeNotifierProvider(
+          create: (_) => di.sl<EditRelatorioController>(),
         ),
       ],
       child: MyApp(),

@@ -68,4 +68,21 @@ class RelatorioFirebaseDataSource implements RelatorioDataSource {
         .doc(relatorioId)
         .delete();
   }
+
+  @override
+  Future<RelatorioModel?> getRelatorioById(
+      String obraId, String relatorioId) async {
+    final doc = await _firestore
+        .collection('obras')
+        .doc(obraId)
+        .collection('relatorios')
+        .doc(relatorioId)
+        .get();
+
+    if (doc.exists) {
+      return RelatorioModel.fromMap(doc.data()!, doc.id);
+    }
+
+    return null;
+  }
 }

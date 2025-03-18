@@ -13,7 +13,7 @@ class ClimaWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     // Obtém as condições climáticas do relatório
     final condicaoClimatica =
-        relatorio.content['Condição climática'] as List<dynamic>? ?? [];
+        relatorio.content['Condição Climática'] as List<dynamic>? ?? [];
     final clima = condicaoClimatica.isNotEmpty &&
             condicaoClimatica[0] is Map<String, dynamic>
         ? condicaoClimatica[0] as Map<String, dynamic>

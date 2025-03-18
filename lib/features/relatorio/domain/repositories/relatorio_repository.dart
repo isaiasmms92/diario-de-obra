@@ -5,4 +5,5 @@ abstract class RelatorioRepository {
   Future<String> saveRelatorio(String obraId, Relatorio relatorio);
   Future<void> updateRelatorio(String obraId, Relatorio relatorio);
   Future<void> deleteRelatorio(String obraId, String relatorioId);
+  Future<Relatorio?> getRelatorioById(String obraId, String relatorioId);
 }

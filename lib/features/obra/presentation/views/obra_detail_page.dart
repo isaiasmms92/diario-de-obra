@@ -532,18 +532,16 @@ class _ObraDetailPageState extends State<ObraDetailPage>
     );
   }
 
-  // Widget para a aba Relatórios (índice 1)
+  // Na ObraDetailPage, atualize o método _buildRelatoriosWidget
   Widget _buildRelatoriosWidget() {
     if (obra == null) {
       return const Center(child: Text('Obra não encontrada'));
     }
 
-    // O ideal seria ter uma implementação mais simples aqui,
-    // mas para integrar com seu código existente podemos usar este método
     if (obra is ObraModel) {
-      return RelatoriosPage(obra: obra as ObraModel);
+      return RelatoriosPage(obra: obra as ObraModel, isEmbedded: true);
     } else if (widget.obraId != null) {
-      return RelatoriosPage(obraId: widget.obraId);
+      return RelatoriosPage(obraId: widget.obraId, isEmbedded: true);
     } else {
       return const Center(
         child: Text('Não foi possível carregar os relatórios'),

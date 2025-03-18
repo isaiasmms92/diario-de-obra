@@ -115,14 +115,25 @@ class _ViewRelatorioPageState extends State<ViewRelatorioPage> {
         ),
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
+          // No método onPressed do botão de voltar na ViewRelatorioPage
           onPressed: () {
-            // Voltamos para a tela de relatórios com a obra carregada, se disponível
-            if (obra is ObraModel) {
-              context.go('/obra_detail/relatorios', extra: obra);
-            } else if (obra != null) {
-              context.go('/obra/${obra.id}/relatorios');
+            // Se estivermos vindo da tab de relatórios da ObraDetailPage
+            if (Navigator.of(context).canPop()) {
+              Navigator.of(context).pop();
             } else {
-              context.go('/');
+              // Voltamos para a tela de relatórios com a obra carregada
+              if (obra is ObraModel) {
+                context.go('/obra_detail', extra: {
+                  'obra': obra,
+                  'initialTab': 1,
+                });
+                // Opcional: Podemos adicionar um parâmetro para indicar qual tab mostrar
+                // context.go('/obra_detail?tab=1', extra: obra);
+              } else if (obra != null) {
+                context.go('/obra/${obra.id}');
+              } else {
+                context.go('/');
+              }
             }
           },
         ),

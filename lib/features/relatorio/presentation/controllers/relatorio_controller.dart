@@ -28,16 +28,30 @@ class RelatorioController extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   List<Relatorio> get relatorios => _relatorios;
 
-  void initialize({Obra? obra, String? obraId}) {
-    if (obra != null) {
-      _obra = obra;
-      _loadRelatorios(obra.id!);
-      _isLoading = false;
-      notifyListeners();
-    } else if (obraId != null) {
-      _loadObra(obraId);
-    } else {
-      _errorMessage = 'Nenhuma obra especificada';
+  void initialize({Obra? obra, String? obraId}) async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      if (obra != null) {
+        _obra = obra;
+        _loadRelatorios(obra.id!);
+      } else if (obraId != null) {
+        // Carrega a obra pelo ID primeiro
+        final obraCarregada = await getObraByIdUseCase(obraId);
+        if (obraCarregada != null) {
+          _obra = obraCarregada;
+          _loadRelatorios(obraId);
+        } else {
+          _errorMessage = "Não foi possível encontrar a obra";
+        }
+      } else {
+        _errorMessage = "Nenhuma obra especificada";
+      }
+    } catch (e) {
+      _errorMessage = "Erro ao carregar dados: $e";
+    } finally {
       _isLoading = false;
       notifyListeners();
     }

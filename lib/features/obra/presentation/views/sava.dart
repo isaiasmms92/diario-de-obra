@@ -1,482 +1,452 @@
-// features/obra/presentation/pages/obra_detail_page.dart
-import 'package:flutter/material.dart';
-import 'package:go_router/go_router.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../../../../../core/di/injection_container.dart' as di;
-import '../../data/models/obra_model.dart';
-import '../../domain/entities/obra.dart';
-import '../../domain/usecases/get_obra_by_id_usecase.dart';
+// import 'package:cloud_firestore/cloud_firestore.dart';
+// import 'package:flutter/material.dart';
+// import 'package:go_router/go_router.dart';
+// import '../features/obra/data/models/obra_model.dart';
+// import '../features/relatorio/data/models/relatorio_model.dart';
 
-class ObraDetailPage extends StatefulWidget {
-  final String? obraId;
-  final ObraModel? obraModel;
+// class ViewRelatorioScreen extends StatelessWidget {
+//   final RelatorioModel relatorio;
+//   final ObraModel obra; // Agora recebemos a obra opcionalmente
 
-  // Construtor que exige pelo menos um dos dois parâmetros
-  const ObraDetailPage({
-    super.key,
-    this.obraId,
-    this.obraModel,
-  }) : assert(obraId != null || obraModel != null);
+//   const ViewRelatorioScreen(
+//       {Key? key, required this.relatorio, required this.obra})
+//       : super(key: key);
 
-  @override
-  _ObraDetailPageState createState() => _ObraDetailPageState();
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         backgroundColor: Colors.blue,
+//         title: Text(
+//           '${relatorio.data.day}/${relatorio.data.month}/${relatorio.data.year}',
+//           style: const TextStyle(color: Colors.white, fontSize: 20),
+//         ),
+//         leading: IconButton(
+//           icon: const Icon(Icons.arrow_back, color: Colors.white),
+//           onPressed: () {
+//             // Ao voltar, passamos a obra de volta, se ela existir
+//             context.go('/obra_detail/relatorios', extra: obra);
+//           },
+//         ),
+//       ),
+//       body: SingleChildScrollView(
+//         padding: const EdgeInsets.all(16.0),
+//         child: Column(
+//           crossAxisAlignment: CrossAxisAlignment.start,
+//           children: [
+//             // Título "Detalhes do relatório" e botão "Preenchendo Relatório"
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//               children: [
+//                 const Text(
+//                   'Detalhes do relatório',
+//                   style: TextStyle(
+//                     fontSize: 16,
+//                     fontWeight: FontWeight.bold,
+//                     color: Colors.orange,
+//                   ),
+//                 ),
+//                 SizedBox(
+//                   height: 35,
+//                   child: ElevatedButton(
+//                     onPressed: () {
+//                       // Lógica para editar o relatório (pode redirecionar para edit-relatorio)
+//                       context.go('/obra_detail/edit-relatorio',
+//                           extra: {'relatorio': relatorio, 'obra': obra});
+//                     },
+//                     style: ElevatedButton.styleFrom(
+//                       backgroundColor: Colors.orange,
+//                       foregroundColor: Colors.white,
+//                       padding: const EdgeInsets.symmetric(
+//                           horizontal: 12, vertical: 8),
+//                       shape: RoundedRectangleBorder(
+//                         borderRadius: BorderRadius.circular(5),
+//                       ),
+//                     ),
+//                     child: const Text('Preenchendo Relatório'),
+//                   ),
+//                 ),
+//               ],
+//             ),
+//             Divider(),
 
-class _ObraDetailPageState extends State<ObraDetailPage> {
-  Obra? obra;
-  bool isLoading = true;
-  String? errorMessage;
+//             // Seção "Relatório Diário de Obra (RDO)"
+//             Center(
+//               child: Padding(
+//                 padding: const EdgeInsets.symmetric(vertical: 8.0),
+//                 child: const Text(
+//                   'Relatório Diário de Obra (RDO)',
+//                   style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+//                 ),
+//               ),
+//             ),
+//             Divider(),
 
-  // Acessamos o caso de uso diretamente do container de injeção de dependências
-  late final GetObraByIdUseCase getObraByIdUseCase;
+//             // Detalhes do relatório em formato de tabela
+//             _buildDetailRow('Data',
+//                 '${relatorio.data.day}/${relatorio.data.month}/${relatorio.data.year}'),
+//             Divider(),
+//             // Utilizamos obra diretamente se não for null, caso contrário, buscamos no Firestore
+//             obra != null
+//                 ? _buildObraDetails(obra!)
+//                 : FutureBuilder<DocumentSnapshot>(
+//                     future: FirebaseFirestore.instance
+//                         .collection('obras')
+//                         .doc(relatorio.obraId)
+//                         .get(),
+//                     builder: (context, obraSnapshot) {
+//                       if (obraSnapshot.connectionState ==
+//                           ConnectionState.waiting) {
+//                         return Center(child: CircularProgressIndicator());
+//                       }
+//                       if (obraSnapshot.hasError || !obraSnapshot.hasData) {
+//                         return const Text('Erro ao carregar dados da obra');
+//                       }
 
-  @override
-  void initState() {
-    super.initState();
-    // Obtenção do caso de uso do container de injeção de dependências
-    getObraByIdUseCase = di.sl<GetObraByIdUseCase>();
+//                       final obra = ObraModel.fromMap(
+//                           obraSnapshot.data!.data() as Map<String, dynamic>,
+//                           obraSnapshot.data!.id);
 
-    // Se recebemos o modelo diretamente, usamos ele
-    if (widget.obraModel != null) {
-      setState(() {
-        obra = ObraModel.calcularPrazos(widget.obraModel!);
-        isLoading = false;
-      });
-    } else {
-      // Caso contrário, carregamos pelo ID
-      _loadObra();
-    }
-  }
+//                       return _buildObraDetails(obra);
+//                     },
+//                   ),
+//             Divider(),
+//             // Condição climática
+//             const Text(
+//               'Condição climática',
+//               style: TextStyle(
+//                   fontSize: 18,
+//                   fontWeight: FontWeight.bold,
+//                   color: Colors.orange),
+//             ),
+//             const SizedBox(height: 8),
+//             Builder(
+//               builder: (context) {
+//                 // Verifica e exibe apenas os períodos com selecionado: true para "Condição climática"
+//                 final condicaoClimatica =
+//                     relatorio.content['Condição climática'] as List<dynamic>? ??
+//                         [];
+//                 final clima = condicaoClimatica.isNotEmpty &&
+//                         condicaoClimatica[0] is Map<String, dynamic>
+//                     ? condicaoClimatica[0] as Map<String, dynamic>
+//                     : {};
 
-  Future<void> _loadObra() async {
-    if (widget.obraId == null) {
-      setState(() {
-        errorMessage = 'ID da obra não fornecido';
-        isLoading = false;
-      });
-      return;
-    }
+//                 List<Widget> weatherRows = [];
 
-    setState(() {
-      isLoading = true;
-      errorMessage = null;
-    });
+//                 // Adiciona Manhã se selecionado for true
+//                 if (clima['Manhã']?['selecionado'] == true) {
+//                   weatherRows.add(
+//                     Expanded(
+//                       child: _buildWeatherRow(
+//                         'Manhã',
+//                         clima['Manhã']?['tempo'] as String? ?? 'Nublado',
+//                         clima['Manhã']?['condicao'] as String? ??
+//                             'Impraticável',
+//                       ),
+//                     ),
+//                   );
+//                 }
+//                 if (clima['Tarde']?['selecionado'] == true) {
+//                   weatherRows.add(
+//                     Expanded(
+//                       child: _buildWeatherRow(
+//                         'Tarde',
+//                         clima['Tarde']?['tempo'] as String? ?? 'Chuvoso',
+//                         clima['Tarde']?['condicao'] as String? ?? 'Praticável',
+//                       ),
+//                     ),
+//                   );
+//                 }
+//                 if (clima['Noite']?['selecionado'] == true) {
+//                   weatherRows.add(
+//                     Expanded(
+//                       child: _buildWeatherRow(
+//                         'Noite',
+//                         clima['Noite']?['tempo'] as String? ?? 'Claro',
+//                         clima['Noite']?['condicao'] as String? ?? 'Praticável',
+//                       ),
+//                     ),
+//                   );
+//                 }
 
-    try {
-      final obraCarregada = await getObraByIdUseCase(widget.obraId!);
+//                 if (weatherRows.isEmpty) {
+//                   return const Padding(
+//                     padding: EdgeInsets.symmetric(vertical: 16.0),
+//                     child: Text(
+//                       'Nenhuma condição climática selecionada',
+//                       style: TextStyle(fontSize: 14, color: Colors.grey),
+//                     ),
+//                   );
+//                 }
 
-      if (obraCarregada == null) {
-        setState(() {
-          errorMessage = 'Obra não encontrada';
-        });
-        return;
-      }
+//                 return Row(
+//                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//                   children: weatherRows,
+//                 );
+//               },
+//             ),
+//             const SizedBox(height: 16),
 
-      if (obraCarregada is ObraModel) {
-        setState(() {
-          obra = ObraModel.calcularPrazos(obraCarregada);
-        });
-      } else {
-        setState(() {
-          obra = obraCarregada;
-        });
-      }
-    } catch (e) {
-      setState(() {
-        errorMessage = 'Erro ao carregar a obra: ${e.toString()}';
-      });
-    } finally {
-      setState(() {
-        isLoading = false;
-      });
-    }
-  }
+//             const SizedBox(height: 16),
 
-  @override
-  Widget build(BuildContext context) {
-    if (isLoading) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.blue,
-          title:
-              Text('Detalhes da Obra', style: TextStyle(color: Colors.white)),
-        ),
-        body: const Center(child: CircularProgressIndicator()),
-      );
-    }
+//             // Seções do relatório (Mão de obra, Equipamentos, etc.)
+//             if (relatorio.sections.contains('Mão de obra'))
+//               _buildSection('Mão de obra (0)'),
+//             if (relatorio.sections.contains('Equipamentos'))
+//               _buildSection('Equipamentos (0)'),
+//             if (relatorio.sections.contains('Atividades'))
+//               _buildSection('Atividades (0)'),
+//             if (relatorio.sections.contains('Ocorrências'))
+//               _buildSection('Ocorrências (0)'),
+//             if (relatorio.sections.contains('Comentários'))
+//               _buildSection('Comentários (0)'),
+//             if (relatorio.sections.contains('Fotos'))
+//               _buildSection('Fotos (0)'),
+//             if (relatorio.sections.contains('Vídeos'))
+//               _buildSection('Vídeos (0)'),
+//             if (relatorio.sections.contains('Anexos'))
+//               _buildSection('Anexos (0)'),
 
-    if (errorMessage != null) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.blue,
-          title: const Text('Detalhes da Obra',
-              style: TextStyle(color: Colors.white)),
-        ),
-        body: Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(errorMessage!),
-              const SizedBox(height: 16),
-              ElevatedButton(
-                onPressed: _loadObra,
-                child: const Text('Tentar novamente'),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
+//             const SizedBox(height: 16),
 
-    if (obra == null) {
-      return Scaffold(
-        appBar: AppBar(
-          backgroundColor: Colors.blue,
-          title: const Text('Detalhes da Obra',
-              style: TextStyle(color: Colors.white)),
-        ),
-        body: const Center(child: Text('Obra não encontrada')),
-      );
-    }
+//             // Assinatura manual
+//             const Text(
+//               'Assinatura manual',
+//               style: TextStyle(
+//                   fontSize: 18,
+//                   fontWeight: FontWeight.bold,
+//                   color: Colors.orange),
+//             ),
+//             const SizedBox(height: 8),
+//             Container(
+//               decoration: BoxDecoration(
+//                 border: Border.all(color: Colors.grey),
+//                 borderRadius: BorderRadius.circular(8),
+//               ),
+//               padding: const EdgeInsets.all(8.0),
+//               child: const Text(
+//                 'Assinatura',
+//                 style: TextStyle(fontSize: 16),
+//               ),
+//             ),
 
-    return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.blue,
-        title: Text(
-          obra!.nome ?? 'Detalhes da Obra',
-          style: const TextStyle(color: Colors.white, fontSize: 20),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () {
-            context.go('/'); // Volta para a tela inicial
-          },
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert, color: Colors.white),
-            onPressed: () {
-              // Ações para o menu
-            },
-          ),
-        ],
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Imagem da obra e contadores
-            Container(
-              height: 200,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                image: obra!.fotoUrl != null && obra!.fotoUrl!.isNotEmpty
-                    ? DecorationImage(
-                        image: NetworkImage(obra!.fotoUrl!),
-                        fit: BoxFit.cover,
-                        onError: (exception, stackTrace) {
-                          print('Erro ao carregar imagem: $exception');
-                        },
-                      )
-                    : null,
-                color: Colors.grey[300],
-              ),
-              alignment: Alignment.bottomCenter,
-              child: Stack(
-                children: [
-                  if (obra!.fotoUrl == null || obra!.fotoUrl!.isEmpty)
-                    const Center(
-                      child: Icon(Icons.image, size: 50, color: Colors.grey),
-                    ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: Padding(
-                      padding: const EdgeInsets.only(bottom: 16.0),
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceAround,
-                        children: [
-                          StreamBuilder<QuerySnapshot>(
-                            stream: FirebaseFirestore.instance
-                                .collection('obras')
-                                .doc(obra!.id)
-                                .collection('relatorios')
-                                .snapshots(),
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState ==
-                                  ConnectionState.waiting) {
-                                return _buildCounterCard('Relatórios', '0');
-                              }
-                              if (snapshot.hasError) {
-                                return _buildCounterCard('Relatórios', 'Erro');
-                              }
-                              final relatoriosCount =
-                                  snapshot.data?.docs.length ?? 0;
-                              return _buildCounterCard(
-                                  'Relatórios', relatoriosCount.toString());
-                            },
-                          ),
-                          _buildCounterCard('Atividades', '0'),
-                          _buildCounterCard('Ocorrências', '0'),
-                          _buildCounterCard('Fotos', '0'),
-                          _buildCounterCard('Vídeos', '0'),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Informações da obra',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.orange,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  _buildInfoRow('Obra', obra!.nome ?? ''),
-                  const Divider(),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildInfoRow('Status', obra!.status ?? '',
-                            isStatus: true),
-                      ),
-                      Expanded(
-                        child: _buildInfoRow(
-                            'Nº do Contrato', obra!.numeroContrato ?? '',
-                            isBold: true),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _buildInfoRow(
-                            'Responsável', obra!.responsavel ?? '',
-                            isBold: true),
-                      ),
-                      Expanded(
-                        child: _buildInfoRow(
-                            'Contratante', obra!.contratante ?? '',
-                            isBold: true),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: _buildInfoRow(
-                            'Data de início', obra!.dataInicio ?? '',
-                            isBold: true),
-                      ),
-                      Expanded(
-                        child: _buildInfoRow(
-                            'Previsão de término', obra!.previsaoTermino ?? '',
-                            isBold: true),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Expanded(
-                        child: _buildInfoRow(
-                          'Prazo contratual',
-                          obra!.formatarPrazo(obra!.prazoContratual),
-                          isBold: true,
-                          fontSizeTitle: 14,
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildInfoRow(
-                          'Prazo decorrido',
-                          obra!.formatarPrazo(obra!.prazoDecorrido),
-                          isBold: true,
-                          fontSizeTitle: 14,
-                        ),
-                      ),
-                      Expanded(
-                        child: _buildInfoRow(
-                          'Prazo a vencer',
-                          obra!.formatarPrazo(obra!.prazoVencer),
-                          isBold: true,
-                          fontSizeTitle: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const Divider(),
-                  _buildInfoRow('Endereço', obra!.endereco ?? ''),
-                  const Divider(),
-                  _buildInfoRow('Observação', obra!.observacao ?? ''),
-                  const Divider(),
-                  ListTile(
-                    leading: const Icon(Icons.file_copy, color: Colors.blue),
-                    title: const Text(
-                      'Documentos da obra',
-                      style:
-                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                    ),
-                    trailing:
-                        const Icon(Icons.arrow_forward_ios, color: Colors.grey),
-                    onTap: () {
-                      // Navegar para a tela de documentos
-                    },
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: 0,
-        items: const [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.home),
-            label: 'Visão geral',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.receipt),
-            label: 'Relatórios',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.menu),
-            label: 'Menu',
-          ),
-        ],
-        onTap: (index) {
-          switch (index) {
-            case 0:
-              // Já está na visão geral
-              break;
-            case 1:
-              if (widget.obraModel != null) {
-                // Se temos o objeto completo, navegamos com ele
-                context.go('/obra_detail/relatorios', extra: widget.obraModel);
-              } else if (widget.obraId != null && obra != null) {
-                // Se temos o ID e a obra já foi carregada
-                context.go('/obra_detail/relatorios', extra: obra);
-              } else if (widget.obraId != null) {
-                // Se temos apenas o ID e a obra ainda não foi carregada
-                context.go('/obra/${widget.obraId}/relatorios');
-              } else {
-                // Caso nenhuma informação esteja disponível, mostramos um erro
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                      content: Text(
-                          'Não foi possível acessar os relatórios: informações da obra não disponíveis')),
-                );
-              }
-              break;
-            case 2:
-              // Navegar para o menu da obra
-              break;
-          }
-        },
-        selectedItemColor: Colors.blue,
-        unselectedItemColor: Colors.grey,
-      ),
-    );
-  }
+//             const SizedBox(height: 16),
 
-  Widget _buildCounterCard(String title, String count) {
-    return Card(
-      elevation: 2,
-      child: Container(
-        padding: const EdgeInsets.all(8),
-        width: 60,
-        height: 60,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              count,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.orange,
-              ),
-            ),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 8,
-                color: Colors.black,
-                overflow: TextOverflow.ellipsis,
-                fontWeight: FontWeight.bold,
-              ),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+//             // Informações adicionais (criado por, última modificação)
+//             Container(
+//               padding: const EdgeInsets.all(8.0),
+//               decoration: BoxDecoration(
+//                 color: Colors.grey[200],
+//                 borderRadius: BorderRadius.circular(8),
+//               ),
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.start,
+//                 children: const [
+//                   Text(
+//                     'Criado por: Lucas (19/02/2025 20:58)',
+//                     style: TextStyle(fontSize: 14),
+//                   ),
+//                   Text(
+//                     'Última modificação: Lucas (19/02/2025 20:58)',
+//                     style: TextStyle(fontSize: 14),
+//                   ),
+//                 ],
+//               ),
+//             ),
 
-  Widget _buildInfoRow(
-    String label,
-    String value, {
-    bool isStatus = false,
-    bool isBold = true,
-    double fontSizeTitle = 16,
-    double fontSizeSubTitle = 14,
-  }) {
-    Color textColor = isStatus ? _getStatusColor(value) : Colors.black87;
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: fontSizeTitle,
-              fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
-              color: Colors.black87,
-            ),
-          ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: fontSizeSubTitle,
-              color: textColor,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+//             const SizedBox(height: 16),
 
-  Color _getStatusColor(String status) {
-    switch (status.toLowerCase()) {
-      case 'não iniciada':
-        return Colors.red;
-      case 'paralisada':
-        return Colors.yellow;
-      case 'em andamento':
-        return Colors.blue;
-      case 'concluída':
-        return Colors.green;
-      default:
-        return Colors.black87;
-    }
-  }
-}
+//             // Botão "Anterior" com data
+//             Row(
+//               mainAxisAlignment: MainAxisAlignment.start,
+//               children: [
+//                 OutlinedButton(
+//                   onPressed: () {
+//                     // // Lógica para navegar para o relatório anterior (ajuste conforme necessário)
+//                     // context.go('/obra_detail/view-relatorio',
+//                     //     extra: {'relatorio': relatorio});
+//                   },
+//                   style: OutlinedButton.styleFrom(
+//                     side: const BorderSide(color: Colors.grey),
+//                     shape: RoundedRectangleBorder(
+//                       borderRadius: BorderRadius.circular(8),
+//                     ),
+//                   ),
+//                   child: const Text('Anterior 19/02/2025'),
+//                 ),
+//               ],
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   // Método auxiliar para criar linhas de detalhes do relatório
+//   Widget _buildDetailRow(String label, String value,
+//       {bool isStatus = false,
+//       bool isBold = true,
+//       double fontSizeTitle = 16,
+//       double fontSizeSubTitle = 14}) {
+//     return Padding(
+//       padding: EdgeInsets.symmetric(vertical: 4),
+//       child: Column(
+//         crossAxisAlignment: CrossAxisAlignment.start,
+//         children: [
+//           Text(
+//             label,
+//             style: TextStyle(
+//               fontSize: fontSizeTitle,
+//               fontWeight: isBold ? FontWeight.bold : FontWeight.normal,
+//               color: Colors.black87,
+//             ),
+//           ),
+//           SizedBox(height: 4),
+//           Text(
+//             value,
+//             style: TextStyle(
+//               fontSize: fontSizeSubTitle,
+//             ),
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   // Método auxiliar para criar seções do relatório
+//   Widget _buildSection(String title) {
+//     return Container(
+//       padding: const EdgeInsets.all(15),
+//       margin: const EdgeInsets.only(bottom: 8.0),
+//       decoration: const BoxDecoration(
+//         color: Colors.white,
+//       ),
+//       child: Row(
+//         children: [
+//           Column(
+//             children: [
+//               Text(
+//                 title,
+//                 style: const TextStyle(fontSize: 16, color: Colors.orange),
+//               ),
+//             ],
+//           ),
+//         ],
+//       ),
+//     );
+//   }
+
+//   // Método auxiliar para criar condições climáticas
+//   Widget _buildWeatherCondition(
+//       String period, IconData icon, String weather, String condition) {
+//     return Container(
+//       padding: const EdgeInsets.all(8.0),
+//       decoration: BoxDecoration(
+//         border: Border.all(color: Colors.grey[300]!),
+//         borderRadius: BorderRadius.circular(8),
+//       ),
+//       child: Column(
+//         children: [
+//           Text(period, style: const TextStyle(fontSize: 14)),
+//           Icon(icon, size: 24, color: Colors.black),
+//           Text(weather, style: const TextStyle(fontSize: 14)),
+//           Text(condition, style: const TextStyle(fontSize: 14)),
+//         ],
+//       ),
+//     );
+//   }
+
+//   // Método auxiliar para obter o dia da semana com base na data
+//   String _getDayOfWeek(DateTime date) {
+//     switch (date.weekday) {
+//       case 1:
+//         return 'Segunda-Feira';
+//       case 2:
+//         return 'Terça-Feira';
+//       case 3:
+//         return 'Quarta-Feira';
+//       case 4:
+//         return 'Quinta-Feira';
+//       case 5:
+//         return 'Sexta-Feira';
+//       case 6:
+//         return 'Sábado';
+//       case 7:
+//         return 'Domingo';
+//       default:
+//         return 'Não informado';
+//     }
+//   }
+
+//   Widget _buildObraDetails(ObraModel obra) {
+//     return Column(
+//       mainAxisAlignment: MainAxisAlignment.start,
+//       children: [
+//         Row(children: [
+//           Expanded(
+//             child:
+//                 _buildDetailRow('Dia da semana', _getDayOfWeek(relatorio.data)),
+//           ),
+//           Expanded(
+//             child: _buildDetailRow(
+//                 'Nº do contrato', obra.numeroContrato ?? 'Não informado'),
+//           ),
+//         ]),
+//         Divider(),
+//         Row(children: [
+//           Expanded(
+//             child: _buildDetailRow(
+//                 'Responsável', obra.responsavel ?? 'Não informado'),
+//           ),
+//           Expanded(
+//             child: _buildDetailRow(
+//                 'Contratante', obra.contratante ?? 'Não informado'),
+//           ),
+//         ]),
+//         Divider(),
+//         Row(children: [
+//           _buildDetailRow('Obra', obra.nome ?? 'Não informado'),
+//         ]),
+//         Divider(),
+//         Row(children: [
+//           _buildDetailRow('Endereço', obra.endereco ?? 'Não informado'),
+//         ]),
+//         Divider(),
+//         // Prazo contratual, decorrido e a vencer (exemplo fixo, ajuste conforme dados reais)
+//         Row(
+//           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+//           children: [
+//             _buildDetailRow(
+//                 'Prazo contratual', obra.prazoContratual.toString() + ' dias',
+//                 fontSizeTitle: 14),
+//             _buildDetailRow(
+//                 'Prazo decorrido', obra.prazoDecorrido.toString() + ' dias',
+//                 fontSizeTitle: 14),
+//             _buildDetailRow(
+//                 'Prazo a vencer', obra.prazoVencer.toString() + ' dias',
+//                 fontSizeTitle: 14),
+//           ],
+//         ),
+//       ],
+//     );
+//   }
+
+//   Widget _buildWeatherRow(String period, String weather, String condition) {
+//     return Container(
+//       margin: const EdgeInsets.only(right: 4, left: 4),
+//       padding: const EdgeInsets.all(8.0),
+//       decoration: BoxDecoration(
+//         border: Border.all(color: Colors.grey[300]!),
+//         borderRadius: BorderRadius.circular(8),
+//       ),
+//       child: Column(
+//         children: [
+//           Text(period, style: const TextStyle(fontSize: 14)),
+//           Icon(Icons.wb_sunny, size: 24, color: Colors.black),
+//           Text(weather, style: const TextStyle(fontSize: 14)),
+//           Text(condition, style: const TextStyle(fontSize: 14)),
+//         ],
+//       ),
+//     );
+//   }
+// }

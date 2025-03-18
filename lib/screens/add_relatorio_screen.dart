@@ -19,22 +19,22 @@ class _AddRelatorioScreenState extends State<AddRelatorioScreen>
   DateTime? _selectedDate = DateTime.now(); // Data inicial como hoje
   bool _copyLastReport =
       true; // Checkbox "Copiar informações do último relatório"
-  String _content = ''; // Novo campo para o conteúdo do relatório
+  final String _content = ''; // Novo campo para o conteúdo do relatório
   bool _showCopiedSections =
       true; // Controla se as seções copiadas estão visíveis
-  List<String> _reportSections = [
-    'Condição climática',
-    'Mão de obra',
+  final List<String> _reportSections = [
+    'Condição Climática',
+    'Mão de Obra',
     'Equipamentos',
     'Atividades',
     'Ocorrências',
-    'Controle de materiais',
+    'Controle de Materiais',
     'Comentários',
     'Fotos',
-    'Vídeos',
+    'Videos',
     'Anexos'
   ];
-  List<bool> _sectionChecked =
+  final List<bool> _sectionChecked =
       List<bool>.filled(10, true); // Inicializa todas como verdadeiras
 
   late AnimationController _animationController;

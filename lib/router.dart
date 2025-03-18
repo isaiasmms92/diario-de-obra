@@ -6,15 +6,16 @@ import 'package:app_diario_obra/features/obra/presentation/views/obra_detail_pag
 import 'package:app_diario_obra/screens/primeiros_passos_screen.dart';
 import 'package:app_diario_obra/features/relatorio/presentation/views/relatorios_page.dart';
 import 'package:app_diario_obra/screens/select_mao_de_obra_screen.dart';
-import 'package:app_diario_obra/features/relatorio/presentation/views/view_relatorio_page.dart';
-import 'package:app_diario_obra/screens/edit_relatorio_screen.dart';
+import 'package:app_diario_obra/features/relatorio/presentation/views/edit_relatorio_page.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'features/auth/presentation/controllers/auth_controller.dart';
-import 'features/auth/presentation/views/login_page.dart';
-import 'features/auth/presentation/views/register_page.dart';
+import 'features/auth/presentation/screens/login_page.dart';
+import 'features/auth/presentation/screens/register_page.dart';
 import 'features/obra/presentation/views/obras_page.dart';
 import 'package:get_it/get_it.dart';
+
+import 'features/relatorio/presentation/views/view_relatorio_page.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -59,8 +60,22 @@ class AppRouter {
       GoRoute(
         path: '/obra_detail',
         builder: (context, state) {
-          final obra = state.extra as ObraModel;
-          return ObraDetailPage(obraModel: obra);
+          // Verifica se extra é um Map ou diretamente um ObraModel
+          if (state.extra is Map) {
+            final Map<String, dynamic> args =
+                state.extra as Map<String, dynamic>;
+            final obra = args['obra'] as ObraModel;
+            final initialTab = args['initialTab'] as int?;
+
+            return ObraDetailPage(
+              obraModel: obra,
+              initialTabIndex:
+                  initialTab!, // Adicione esse parâmetro na ObraDetailPage
+            );
+          } else {
+            // Caso onde é passado diretamente o ObraModel
+            return ObraDetailPage(obraModel: state.extra as ObraModel);
+          }
         },
         routes: [
           // Sub-rota para relatórios
@@ -100,27 +115,43 @@ class AppRouter {
           routes: [
             // Sub-rota para relatórios
             GoRoute(
-                path: 'relatorios',
-                pageBuilder: (context, state) {
-                  final id = state.pathParameters['id']!;
-                  return CustomTransitionPage(
-                      key: state.pageKey,
-                      child: RelatoriosPage(obraId: id),
-                      transitionsBuilder:
-                          (context, animation, secondaryAnimation, child) {
-                        const begin = Offset(1.0, 0.0);
-                        const end = Offset.zero;
-                        const curve = Curves.easeInOut;
+              path: 'relatorios',
+              pageBuilder: (context, state) {
+                // Importante: NÃO faça cast direto - verifique o tipo primeiro
+                Widget childPage;
 
-                        var tween = Tween(begin: begin, end: end)
-                            .chain(CurveTween(curve: curve));
-                        var offsetAnimation = animation.drive(tween);
-                        return SlideTransition(
-                          position: offsetAnimation,
-                          child: child,
-                        );
-                      });
-                })
+                if (state.extra is ObraModel) {
+                  // Se for ObraModel, passa para a página
+                  childPage = RelatoriosPage(obra: state.extra as ObraModel);
+                } else if (state.extra is String) {
+                  // Se for uma String (ID da obra), inicializa com obraId
+                  childPage = RelatoriosPage(obraId: state.extra as String);
+                } else {
+                  // Caso não tenha extra ou seja outro tipo
+                  childPage = const RelatoriosPage();
+                }
+
+                return CustomTransitionPage(
+                  key: state.pageKey,
+                  child: childPage,
+                  transitionsBuilder:
+                      (context, animation, secondaryAnimation, child) {
+                    const begin = Offset(1.0, 0.0);
+                    const end = Offset.zero;
+                    const curve = Curves.easeInOut;
+
+                    var tween = Tween(begin: begin, end: end)
+                        .chain(CurveTween(curve: curve));
+                    var offsetAnimation = animation.drive(tween);
+
+                    return SlideTransition(
+                      position: offsetAnimation,
+                      child: child,
+                    );
+                  },
+                );
+              },
+            ),
           ]),
       GoRoute(
         path: '/obra_detail/view-relatorio',
@@ -140,19 +171,17 @@ class AppRouter {
           }
         },
       ),
+      // Versão ideal do router
       GoRoute(
-        path: '/obra_detail/edit-relatorio',
+        path: '/obra_detail/edit-relatorio/:obraId/:relatorioId',
         builder: (context, state) {
-          if (state.extra is Map<String, dynamic>) {
-            final Map<String, dynamic> args =
-                state.extra as Map<String, dynamic>;
-            final relatorio = args['relatorio'] as RelatorioModel;
-            final obra = args['obra'] as ObraModel;
-            return EditRelatorioScreen(relatorio: relatorio, obra: obra);
-          } else {
-            throw Exception(
-                'Dados passados para EditRelatorioScreen estão no formato incorreto.');
-          }
+          final obraId = state.pathParameters['obraId'] ?? '';
+          final relatorioId = state.pathParameters['relatorioId'] ?? '';
+
+          return EditRelatorioPage(
+            relatorioId: relatorioId,
+            obraId: obraId,
+          );
         },
       ),
       GoRoute(

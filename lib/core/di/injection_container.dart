@@ -29,8 +29,11 @@ import '../../features/relatorio/data/datasources/relatorio_firebase_datasource.
 import '../../features/relatorio/data/repositories/relatorio_repository_impl.dart';
 import '../../features/relatorio/domain/repositories/relatorio_repository.dart';
 import '../../features/relatorio/domain/usecases/delete_relatorio_usecase.dart';
+import '../../features/relatorio/domain/usecases/get_relatorio_by_id_usecase.dart';
 import '../../features/relatorio/domain/usecases/get_relatorios_by_obra_id_usecase.dart';
+import '../../features/relatorio/domain/usecases/update_relatorio_usecase.dart';
 import '../../features/relatorio/presentation/controllers/relatorio_controller.dart';
+import '../../features/relatorio/presentation/controllers/relatorio_editor_controller.dart';
 
 final GetIt sl = GetIt.instance;
 
@@ -61,6 +64,11 @@ Future<void> init() async {
         getCurrentUserUseCase: sl(),
         authStateChangesUseCase: sl(),
       ));
+  sl.registerFactory(() => EditRelatorioController(
+        getRelatorioByIdUseCase: sl(),
+        updateRelatorioUseCase: sl(),
+        getObraByIdUseCase: sl(),
+      ));
 
   // Use Cases
   sl.registerLazySingleton(() => GetObrasUseCase(sl()));
@@ -76,6 +84,8 @@ Future<void> init() async {
   sl.registerLazySingleton(() => GetCurrentUserUseCase(sl()));
   sl.registerLazySingleton(() => AuthStateChangesUseCase(sl()));
   sl.registerLazySingleton(() => RegisterUseCase(sl())); // Novo caso de uso
+  sl.registerLazySingleton(() => GetRelatorioByIdUseCase(sl()));
+  sl.registerLazySingleton(() => UpdateRelatorioUseCase(sl()));
 
   // Repositories
   sl.registerLazySingleton<ObraRepository>(() => ObraRepositoryImpl(
